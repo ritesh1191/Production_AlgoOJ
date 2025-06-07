@@ -1,6 +1,6 @@
 const Submission = require('../models/Submission');
 const Problem = require('../models/Problem');
-const dockerRunner = require('../utils/dockerRunner');
+const codeRunner = require('../utils/localRunner');
 
 // Create a new submission
 exports.createSubmission = async (req, res) => {
@@ -134,15 +134,15 @@ exports.submitSolution = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found' });
         }
 
-        // Initialize Docker runner if not initialized
-        await dockerRunner.initialize();
+        // Initialize code runner if not initialized
+        await codeRunner.initialize();
 
         let allTestsPassed = true;
         let testResults = [];
 
         // Run each test case
         for (const testCase of problem.testCases) {
-            const result = await dockerRunner.runCode(code, language, testCase.input);
+            const result = await codeRunner.runCode(code, language, testCase.input);
             
             const testPassed = result.success && 
                               result.output.trim() === testCase.expectedOutput.trim();
@@ -172,8 +172,8 @@ exports.submitSolution = async (req, res) => {
 
         await submission.save();
 
-        // Clean up Docker container
-        await dockerRunner.stopContainer();
+        // Clean up resources
+        await codeRunner.stopContainer();
 
         return res.status(200).json({
             message: allTestsPassed ? 'All test cases passed!' : 'Some test cases failed',
@@ -187,8 +187,8 @@ exports.submitSolution = async (req, res) => {
     } catch (error) {
         console.error('Submission error:', error);
         
-        // Ensure Docker container is stopped in case of error
-        await dockerRunner.stopContainer();
+        // Ensure resources are cleaned up in case of error
+        await codeRunner.stopContainer();
         
         return res.status(500).json({
             message: 'Error processing submission',
