@@ -45,6 +45,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root route for health checks
+app.get('/', (req, res) => {
+  res.json({
+    status: 'healthy',
+    message: 'AlgoOJ Backend API is running',
+    version: '1.0.0'
+  });
+});
+
 // Initialize temp directory and code runner
 async function initialize() {
     try {
@@ -121,6 +130,7 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Registered routes:');
+  console.log('- /');
   console.log('- /api/auth/*');
   console.log('- /api/problems/*');
   console.log('- /api/submissions/*');
