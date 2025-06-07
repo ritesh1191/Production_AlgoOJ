@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const setupTempDirectory = require('./utils/setupTemp');
-const dockerRunner = require('./utils/dockerRunner');
+const codeRunner = require('./utils/localRunner');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -17,7 +17,7 @@ app.options('*', cors());
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://192.168.68.60:3000'],
+  origin: ['http://localhost:3000', 'http://192.168.68.60:3000', process.env.FRONTEND_URL],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -30,7 +30,7 @@ app.use(express.json());
 // Request logging middleware
 app.use((req, res, next) => {
   // Allow requests from both localhost and network IP
-  const allowedOrigins = ['http://localhost:3000', 'http://192.168.68.60:3000'];
+  const allowedOrigins = ['http://localhost:3000', 'http://192.168.68.60:3000', process.env.FRONTEND_URL];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
@@ -45,15 +45,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize Docker and temp directory
+// Initialize temp directory and code runner
 async function initialize() {
     try {
         await setupTempDirectory();
-        await dockerRunner.initialize();
-        console.log('Docker and temp directory initialization completed');
+        await codeRunner.initialize();
+        console.log('Temporary directory setup completed');
     } catch (error) {
         console.error('Initialization error:', error);
-        process.exit(1);
+        // Don't exit process on initialization error
+        console.log('Continuing despite initialization error...');
     }
 }
 
@@ -105,17 +106,17 @@ app.use((err, req, res, next) => {
 // Cleanup on server shutdown
 process.on('SIGTERM', async () => {
     console.log('Received SIGTERM. Cleaning up...');
-    await dockerRunner.stopContainer();
+    await codeRunner.stopContainer();
     process.exit(0);
 });
 
 process.on('SIGINT', async () => {
     console.log('Received SIGINT. Cleaning up...');
-    await dockerRunner.stopContainer();
+    await codeRunner.stopContainer();
     process.exit(0);
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
