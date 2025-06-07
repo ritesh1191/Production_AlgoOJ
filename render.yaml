@@ -10,10 +10,11 @@ services:
       - key: PORT
         value: 8080
 
-  - type: static
+  - type: web
     name: algoj-frontend
     buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/build
+    staticPublishPath: ./frontend/build
+    env: static
     envVars:
       - key: REACT_APP_API_URL
         value: https://algoj-backend.onrender.com 
