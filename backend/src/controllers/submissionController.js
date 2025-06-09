@@ -134,9 +134,30 @@ exports.submitSolution = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found' });
         }
 
-        // Initialize Docker runner if not initialized
-        await dockerRunner.initialize();
+        if (process.env.NODE_ENV === 'production') {
+            // In production, save the submission without running tests
+            const submission = new Submission({
+                user: userId,
+                problem: problemId,
+                code,
+                language,
+                status: 'Pending',
+                testResults: [],
+                message: 'Code execution is queued for processing'
+            });
 
+            await submission.save();
+
+            return res.status(200).json({
+                message: 'Submission received and queued for processing',
+                submission: {
+                    id: submission._id,
+                    status: submission.status
+                }
+            });
+        }
+
+        // Development environment: Run tests immediately
         let allTestsPassed = true;
         let testResults = [];
 
@@ -172,9 +193,6 @@ exports.submitSolution = async (req, res) => {
 
         await submission.save();
 
-        // Clean up Docker container
-        await dockerRunner.stopContainer();
-
         return res.status(200).json({
             message: allTestsPassed ? 'All test cases passed!' : 'Some test cases failed',
             submission: {
@@ -186,10 +204,6 @@ exports.submitSolution = async (req, res) => {
 
     } catch (error) {
         console.error('Submission error:', error);
-        
-        // Ensure Docker container is stopped in case of error
-        await dockerRunner.stopContainer();
-        
         return res.status(500).json({
             message: 'Error processing submission',
             error: error.message
