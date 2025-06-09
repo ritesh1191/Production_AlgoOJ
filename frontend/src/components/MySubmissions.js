@@ -64,7 +64,7 @@ function MySubmissions() {
 
   const fetchSubmissions = async () => {
     try {
-      const data = await submissionService.getUserSubmissions();
+      const data = await submissionService.getMySubmissions();
       setSubmissions(data);
       setFilteredSubmissions(data);
     } catch (error) {

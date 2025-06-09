@@ -46,20 +46,20 @@ const Home = () => {
       try {
         // Fetch problems and submissions in parallel
         const [problemsRes, submissionsRes] = await Promise.all([
-          problemService.getProblems(),
+          problemService.getAll(),
           submissionService.getMySubmissions()
         ]);
 
         // Create a set of solved problem IDs
         const solvedProblemIds = new Set(
-          submissionsRes.data
+          submissionsRes
             .filter(sub => sub.status === 'Accepted')
             .map(sub => sub.problem._id)
         );
 
         setSolvedProblems(solvedProblemIds);
         setProblems(problemsRes);
-        setSubmissions(submissionsRes.data);
+        setSubmissions(submissionsRes);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch data');
