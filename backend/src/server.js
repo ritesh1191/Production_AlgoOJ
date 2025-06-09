@@ -48,12 +48,19 @@ app.use((req, res, next) => {
 // Initialize Docker and temp directory
 async function initialize() {
     try {
-        await setupTempDirectory();
-        await dockerRunner.initialize();
-        console.log('Docker and temp directory initialization completed');
+        if (process.env.NODE_ENV !== 'production') {
+            await setupTempDirectory();
+            await dockerRunner.initialize();
+            console.log('Docker and temp directory initialization completed');
+        } else {
+            console.log('Skipping Docker initialization in production environment');
+        }
     } catch (error) {
         console.error('Initialization error:', error);
-        process.exit(1);
+        // Don't exit in production
+        if (process.env.NODE_ENV !== 'production') {
+            process.exit(1);
+        }
     }
 }
 
@@ -68,7 +75,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/algoj', {
 })
 .catch((error) => {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+    }
 });
 
 // Routes
