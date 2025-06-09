@@ -1,11 +1,9 @@
-import axios from 'axios';
+import api from './api.service';
 import { toast } from 'react-toastify';
-
-const API_URL = 'http://localhost:5001/api/auth';
 
 const register = async (username, email, password, adminCode = '') => {
   try {
-    const response = await axios.post(`${API_URL}/register`, {
+    const response = await api.post('/api/auth/register', {
       username,
       email,
       password,
@@ -30,7 +28,7 @@ const register = async (username, email, password, adminCode = '') => {
 
 const login = async (email, password) => {
   try {
-    const response = await axios.post(`${API_URL}/login`, {
+    const response = await api.post('/api/auth/login', {
       email,
       password,
     });

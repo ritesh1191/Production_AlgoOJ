@@ -28,6 +28,8 @@ import {
 import problemService from '../services/problem.service';
 import axios from 'axios';
 import authService from '../services/auth.service';
+import submissionService from '../services/submission.service';
+import { toast } from 'react-hot-toast';
 
 const Home = () => {
   const [problems, setProblems] = useState([]);
@@ -37,6 +39,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [solvedProblems, setSolvedProblems] = useState(new Set());
   const user = authService.getCurrentUser();
+  const [submissions, setSubmissions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,9 +47,7 @@ const Home = () => {
         // Fetch problems and submissions in parallel
         const [problemsRes, submissionsRes] = await Promise.all([
           problemService.getProblems(),
-          axios.get('http://localhost:5001/api/submissions/my-submissions', {
-            headers: { Authorization: `Bearer ${user.token}` }
-          })
+          submissionService.getMySubmissions()
         ]);
 
         // Create a set of solved problem IDs
@@ -58,6 +59,7 @@ const Home = () => {
 
         setSolvedProblems(solvedProblemIds);
         setProblems(problemsRes);
+        setSubmissions(submissionsRes.data);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch data');
@@ -97,6 +99,16 @@ const Home = () => {
       problem.description.toLowerCase().includes(searchLower);
     return matchesDifficulty && matchesSearch;
   });
+
+  const fetchSubmissions = async () => {
+    try {
+      const data = await submissionService.getMySubmissions();
+      setSubmissions(data);
+    } catch (error) {
+      console.error('Error fetching submissions:', error);
+      toast.error('Failed to fetch submissions');
+    }
+  };
 
   if (loading) {
     return (

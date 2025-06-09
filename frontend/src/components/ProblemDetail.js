@@ -31,6 +31,7 @@ import './ProblemDetail.css';
 import { runCode, submitAndEvaluate } from '../services/codeExecutionService';
 import authService from '../services/auth.service';
 import submissionService from '../services/submission.service';
+import problemService from '../services/problem.service';
 
 const languageOptions = {
   python: {
@@ -68,10 +69,10 @@ function ProblemDetail() {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/api/problems/${id}`);
-        setProblem(response.data);
-        if (response.data.testCases && response.data.testCases.length > 0) {
-          const visibleTestCase = response.data.testCases.find(tc => !tc.isHidden);
+        const data = await problemService.getById(id);
+        setProblem(data);
+        if (data.testCases && data.testCases.length > 0) {
+          const visibleTestCase = data.testCases.find(tc => !tc.isHidden);
           if (visibleTestCase) {
             setCustomInput(visibleTestCase.input);
             setCustomOutput('');
@@ -90,8 +91,8 @@ function ProblemDetail() {
           localStorage.removeItem('savedLanguage');
         }
       } catch (error) {
-        toast.error('Failed to load problem details');
         console.error('Error fetching problem:', error);
+        toast.error('Failed to fetch problem details');
       }
     };
     fetchProblem();

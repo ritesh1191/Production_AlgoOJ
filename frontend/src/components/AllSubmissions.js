@@ -30,6 +30,8 @@ import { format } from 'date-fns';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { materialDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import submissionService from '../services/submission.service';
+import { toast } from 'react-hot-toast';
 
 const AllSubmissions = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -43,15 +45,13 @@ const AllSubmissions = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/submissions/all', {
-          headers: {
-            'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
-          }
-        });
-        setSubmissions(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
+        setLoading(true);
+        const data = await submissionService.getAllSubmissions();
+        setSubmissions(data);
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+        toast.error('Failed to fetch submissions');
+      } finally {
         setLoading(false);
       }
     };

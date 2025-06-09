@@ -1,65 +1,36 @@
-import axios from 'axios';
-import authHeader from './auth-header';
+import api from './api.service';
 
-const API_URL = 'http://localhost:5001/api/problems';
-
-const getProblems = async () => {
-  try {
-    const response = await axios.get(API_URL);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+const getAll = async () => {
+  const response = await api.get('/api/problems');
+  return response.data;
 };
 
-const getProblemById = async (id) => {
-  try {
-    const response = await axios.get(`${API_URL}/${id}`);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+const getById = async (id) => {
+  const response = await api.get(`/api/problems/${id}`);
+  return response.data;
 };
 
-const createProblem = async (problemData) => {
-  try {
-    const response = await axios.post(API_URL, problemData, { headers: authHeader() });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+const create = async (problemData) => {
+  const response = await api.post('/api/problems', problemData);
+  return response.data;
 };
 
-const updateProblem = async (id, problemData) => {
-  try {
-    const response = await axios.put(`${API_URL}/${id}`, problemData, { headers: authHeader() });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+const update = async (id, problemData) => {
+  const response = await api.put(`/api/problems/${id}`, problemData);
+  return response.data;
 };
 
-const deleteProblem = async (id) => {
-  try {
-    const headers = authHeader();
-    if (!headers.Authorization) {
-      throw new Error('No authentication token found');
-    }
-    
-    const response = await axios.delete(`${API_URL}/${id}`, { headers });
-    return response.data;
-  } catch (error) {
-    console.error('Delete error details:', error.response || error);
-    throw error.response?.data || error;
-  }
+const remove = async (id) => {
+  const response = await api.delete(`/api/problems/${id}`);
+  return response.data;
 };
 
 const problemService = {
-  getProblems,
-  getProblemById,
-  createProblem,
-  updateProblem,
-  deleteProblem,
+  getAll,
+  getById,
+  create,
+  update,
+  remove
 };
 
 export default problemService; 

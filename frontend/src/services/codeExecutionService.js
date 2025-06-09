@@ -1,4 +1,4 @@
-import axios from 'axios';
+import api from './api.service';
 import authHeader from './auth-header';
 
 const API_URL = 'http://localhost:5001/api/code';
@@ -13,33 +13,32 @@ export const LANGUAGE_IDS = {
 // Run code with single input
 export const runCode = async (code, language, input) => {
     try {
-        const response = await axios.post(`${API_URL}/execute`, {
+        const response = await api.post('/api/code/execute', {
             code,
             language,
             input
-        }, { headers: authHeader() });
-
-        return {
-            output: response.data.output || '',
-            time: 0, // We're not tracking execution time for now
-            memory: 0 // We're not tracking memory usage for now
-        };
+        });
+        return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Error executing code');
+        throw error;
     }
 };
 
 // Submit code and check against all test cases
 export const submitAndEvaluate = async (code, language, testCases) => {
     try {
-        const response = await axios.post(`${API_URL}/evaluate`, {
+        const response = await api.post('/api/code/evaluate', {
             code,
             language,
             testCases
-        }, { headers: authHeader() });
-
+        });
         return response.data;
     } catch (error) {
-        throw new Error(error.response?.data?.message || 'Error evaluating code');
+        throw error;
     }
+};
+
+export default {
+    runCode,
+    submitAndEvaluate
 }; 

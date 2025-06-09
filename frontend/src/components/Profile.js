@@ -25,6 +25,8 @@ import {
 import { format } from 'date-fns';
 import axios from 'axios';
 import authService from '../services/auth.service';
+import problemService from '../services/problem.service';
+import submissionService from '../services/submission.service';
 
 const Profile = () => {
   const [stats, setStats] = useState({
@@ -44,17 +46,10 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [problemsRes, submissionsRes] = await Promise.all([
-          axios.get('http://localhost:5001/api/problems', {
-            headers: { Authorization: `Bearer ${user.token}` }
-          }),
-          axios.get('http://localhost:5001/api/submissions/my-submissions', {
-            headers: { Authorization: `Bearer ${user.token}` }
-          })
+        const [problems, submissions] = await Promise.all([
+          problemService.getAll(),
+          submissionService.getMySubmissions()
         ]);
-
-        const problems = problemsRes.data;
-        const submissions = submissionsRes.data;
 
         // Get unique solved problems
         const solvedProblems = new Set(
