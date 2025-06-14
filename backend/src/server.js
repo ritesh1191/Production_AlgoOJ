@@ -60,10 +60,10 @@ async function initialize() {
     try {
         await setupTempDirectory();
         await dockerRunner.initialize();
-        console.log('Docker and temp directory initialization completed');
+        console.log('Initialization completed');
     } catch (error) {
-        console.error('Initialization error:', error);
-        process.exit(1);
+        console.warn('Initialization warning:', error.message);
+        // Don't exit the process, just log the warning
     }
 }
 
@@ -115,13 +115,11 @@ app.use((err, req, res, next) => {
 // Cleanup on server shutdown
 process.on('SIGTERM', async () => {
     console.log('Received SIGTERM. Cleaning up...');
-    await dockerRunner.stopContainer();
     process.exit(0);
 });
 
 process.on('SIGINT', async () => {
     console.log('Received SIGINT. Cleaning up...');
-    await dockerRunner.stopContainer();
     process.exit(0);
 });
 

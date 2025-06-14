@@ -1,138 +1,166 @@
 const { exec } = require('child_process');
-const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
-const execAsync = promisify(exec);
-
-class DockerRunner {
-    constructor() {
-        this.containerId = null;
-        this.tempDir = path.join(__dirname, '../temp');
-    }
-
-    async initialize() {
-        try {
-            // Build Docker image if not exists
-            await execAsync('docker build -t algoj-compiler -f Dockerfile.compiler .');
-        } catch (error) {
-            console.error('Error building Docker image:', error);
-            throw error;
-        }
-    }
-
-    async createContainer() {
-        try {
-            const { stdout } = await execAsync(
-                'docker run -d --network none --cpus=1 --memory=512m --rm algoj-compiler'
-            );
-            this.containerId = stdout.trim();
-            return this.containerId;
-        } catch (error) {
-            console.error('Error creating container:', error);
-            throw error;
-        }
-    }
-
-    async runCode(code, language, input = '') {
-        if (!this.containerId) {
-            await this.createContainer();
-        }
-
-        const fileId = uuidv4();
-        let sourceFile, outputFile, command;
-
-        try {
-            // Create source file
-            switch (language) {
-                case 'cpp':
-                    sourceFile = `${fileId}.cpp`;
-                    outputFile = `${fileId}.out`;
-                    command = `g++ ${sourceFile} -o ${outputFile} && ./${outputFile}`;
-                    break;
-                case 'python':
-                    sourceFile = `${fileId}.py`;
-                    command = `python3 ${sourceFile}`;
-                    break;
-                case 'java':
-                    sourceFile = `Main.java`;
-                    command = `javac ${sourceFile} && java Main`;
-                    break;
-                default:
-                    throw new Error('Unsupported language');
-            }
-
-            // Write code to file
-            await fs.writeFile(path.join(this.tempDir, sourceFile), code);
-            if (input) {
-                await fs.writeFile(path.join(this.tempDir, `${fileId}.txt`), input);
-            }
-
-            // Copy file to container
-            await execAsync(`docker cp ${path.join(this.tempDir, sourceFile)} ${this.containerId}:/code/`);
-            if (input) {
-                await execAsync(`docker cp ${path.join(this.tempDir, `${fileId}.txt`)} ${this.containerId}:/code/`);
-            }
-
-            // Run code with timeout
-            const { stdout, stderr } = await execAsync(
-                `docker exec ${this.containerId} timeout ${process.env.MAX_EXECUTION_TIME || 5} sh -c '${command} < ${fileId}.txt'`,
-                { timeout: (parseInt(process.env.MAX_EXECUTION_TIME) || 5) * 1000 }
-            );
-
-            // Cleanup
-            await this.cleanup(fileId);
-
-            return {
-                success: true,
-                output: stdout,
-                error: stderr
-            };
-        } catch (error) {
-            await this.cleanup(fileId);
-            
-            if (error.killed || error.signal === 'SIGTERM') {
-                return {
-                    success: false,
-                    error: 'Execution timed out'
-                };
-            }
-
-            return {
-                success: false,
-                error: error.stderr || error.message
-            };
-        }
-    }
-
-    async cleanup(fileId) {
-        try {
-            // Remove files from container
-            await execAsync(`docker exec ${this.containerId} rm -f /code/*`);
-            
-            // Remove local temp files
-            const files = await fs.readdir(this.tempDir);
-            for (const file of files) {
-                if (file.startsWith(fileId)) {
-                    await fs.unlink(path.join(this.tempDir, file));
-                }
-            }
-        } catch (error) {
-            console.error('Cleanup error:', error);
-        }
-    }
-
-    async stopContainer() {
-        if (this.containerId) {
-            try {
-                await execAsync(`docker stop ${this.containerId}`);
-                this.containerId = null;
-            } catch (error) {
-                console.error('Error stopping container:', error);
-            }
-        }
-    }
+// Create temp directory if it doesn't exist
+const tempDir = path.join(__dirname, '../../temp');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
 }
 
-module.exports = new DockerRunner(); 
+const initialize = async () => {
+    try {
+        // Check if required compilers are installed
+        await Promise.all([
+            execPromise('python3 --version'),
+            execPromise('g++ --version'),
+            execPromise('javac --version')
+        ]);
+        console.log('All required compilers are available');
+    } catch (error) {
+        console.warn('Some compilers might not be available:', error.message);
+    }
+};
+
+const runCode = async (code, language, input) => {
+    try {
+        // Create a unique filename
+        const timestamp = Date.now();
+        const fileName = `code_${timestamp}`;
+        const filePath = path.join(tempDir, `${fileName}.${getFileExtension(language)}`);
+        
+        // Write code to file
+        await fs.writeFile(filePath, code);
+
+        let result;
+        switch (language.toLowerCase()) {
+            case 'python':
+                result = await runPythonCode(filePath, input);
+                break;
+            case 'cpp':
+                result = await runCppCode(filePath, input);
+                break;
+            case 'java':
+                result = await runJavaCode(filePath, input);
+                break;
+            default:
+                throw new Error(`Unsupported language: ${language}`);
+        }
+
+        // Cleanup
+        await cleanup(filePath);
+        return result;
+    } catch (error) {
+        return {
+            output: '',
+            error: error.message,
+            success: false
+        };
+    }
+};
+
+const runPythonCode = async (filePath, input) => {
+    try {
+        const { stdout, stderr } = await execPromise(
+            `echo "${input}" | python3 ${filePath}`,
+            { timeout: 5000 } // 5 second timeout
+        );
+        return {
+            output: stdout,
+            error: stderr,
+            success: !stderr
+        };
+    } catch (error) {
+        return {
+            output: '',
+            error: error.message,
+            success: false
+        };
+    }
+};
+
+const runCppCode = async (filePath, input) => {
+    try {
+        const outputPath = filePath.replace('.cpp', '');
+        // Compile
+        await execPromise(`g++ ${filePath} -o ${outputPath}`);
+        // Run
+        const { stdout, stderr } = await execPromise(
+            `echo "${input}" | ${outputPath}`,
+            { timeout: 5000 }
+        );
+        return {
+            output: stdout,
+            error: stderr,
+            success: !stderr
+        };
+    } catch (error) {
+        return {
+            output: '',
+            error: error.message,
+            success: false
+        };
+    }
+};
+
+const runJavaCode = async (filePath, input) => {
+    try {
+        const className = path.basename(filePath, '.java');
+        // Compile
+        await execPromise(`javac ${filePath}`);
+        // Run
+        const { stdout, stderr } = await execPromise(
+            `echo "${input}" | java -cp ${path.dirname(filePath)} ${className}`,
+            { timeout: 5000 }
+        );
+        return {
+            output: stdout,
+            error: stderr,
+            success: !stderr
+        };
+    } catch (error) {
+        return {
+            output: '',
+            error: error.message,
+            success: false
+        };
+    }
+};
+
+const getFileExtension = (language) => {
+    switch (language.toLowerCase()) {
+        case 'python':
+            return 'py';
+        case 'cpp':
+            return 'cpp';
+        case 'java':
+            return 'java';
+        default:
+            throw new Error(`Unsupported language: ${language}`);
+    }
+};
+
+const cleanup = async (filePath) => {
+    try {
+        // Remove source file
+        await fs.unlink(filePath);
+        
+        // Remove compiled files if they exist
+        const basePath = filePath.replace(/\.[^/.]+$/, '');
+        const files = await fs.readdir(path.dirname(filePath));
+        for (const file of files) {
+            if (file.startsWith(path.basename(basePath)) && file !== path.basename(filePath)) {
+                await fs.unlink(path.join(path.dirname(filePath), file));
+            }
+        }
+    } catch (error) {
+        console.warn('Cleanup error:', error.message);
+    }
+};
+
+module.exports = {
+    initialize,
+    runCode
+}; 
