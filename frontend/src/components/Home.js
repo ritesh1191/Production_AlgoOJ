@@ -45,7 +45,7 @@ const Home = () => {
       try {
         // Fetch problems and submissions in parallel
         const [problemsRes, submissionsRes] = await Promise.all([
-          problemService.getProblems(),
+          problemService.getAllProblems(),
           api.get('/api/submissions/my-submissions', {
             headers: { Authorization: `Bearer ${user.token}` }
           })
