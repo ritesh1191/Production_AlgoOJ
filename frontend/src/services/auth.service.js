@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 
 const register = async (username, email, password, adminCode = '') => {
   try {
+    console.log('Registering new user...');
     const response = await api.post('/api/auth/register', {
       username,
       email,
@@ -20,6 +21,7 @@ const register = async (username, email, password, adminCode = '') => {
     }
     return response.data;
   } catch (error) {
+    console.error('Registration error:', error);
     const message = error.response?.data?.message || 'Registration failed';
     toast.error(message);
     throw error;
@@ -28,6 +30,7 @@ const register = async (username, email, password, adminCode = '') => {
 
 const login = async (email, password) => {
   try {
+    console.log('Logging in user...');
     const response = await api.post('/api/auth/login', {
       email,
       password,
@@ -43,6 +46,7 @@ const login = async (email, password) => {
     }
     return response.data;
   } catch (error) {
+    console.error('Login error:', error);
     const message = error.response?.data?.message || 'Login failed';
     toast.error(message);
     throw error;
@@ -50,12 +54,17 @@ const login = async (email, password) => {
 };
 
 const logout = () => {
+  console.log('Logging out user...');
   localStorage.removeItem('user');
+  toast.info('Logged out successfully');
 };
 
 const getCurrentUser = () => {
   const userStr = localStorage.getItem('user');
-  if (!userStr) return null;
+  if (!userStr) {
+    console.log('No user found in localStorage');
+    return null;
+  }
   
   try {
     const user = JSON.parse(userStr);
@@ -73,11 +82,35 @@ const getCurrentUser = () => {
   }
 };
 
+const refreshUserData = async () => {
+  try {
+    console.log('Refreshing user data...');
+    const response = await api.get('/api/auth/me');
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      const updatedUserData = {
+        ...currentUser,
+        ...response.data
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUserData));
+      return updatedUserData;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error refreshing user data:', error);
+    if (error.response?.status === 401) {
+      logout();
+    }
+    return null;
+  }
+};
+
 const authService = {
   register,
   login,
   logout,
   getCurrentUser,
+  refreshUserData
 };
 
 export default authService; 
