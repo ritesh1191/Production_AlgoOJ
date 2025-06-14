@@ -1,5 +1,5 @@
-const Submission = require('../models/submission');
-const Problem = require('../models/problem');
+const Submission = require('../models/Submission');
+const Problem = require('../models/Problem');
 const dockerRunner = require('../utils/dockerRunner');
 
 // Create a new submission
