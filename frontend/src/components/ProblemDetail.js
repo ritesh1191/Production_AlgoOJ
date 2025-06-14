@@ -29,7 +29,7 @@ import SendIcon from '@mui/icons-material/Send';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import './ProblemDetail.css';
-import { runCode, submitAndEvaluate } from '../services/codeExecutionService';
+import { executeCode, submitSolution } from '../services/codeExecutionService';
 import authService from '../services/auth.service';
 import submissionService from '../services/submission.service';
 
@@ -111,7 +111,7 @@ function ProblemDetail() {
   const handleRun = async () => {
     setIsRunning(true);
     try {
-      const result = await runCode(code, language, customInput);
+      const result = await executeCode(code, language, customInput);
       setCustomOutput(result.output || '');  // Ensure output is not undefined
       toast.success('Code executed successfully!');
     } catch (error) {
@@ -134,7 +134,7 @@ function ProblemDetail() {
     
     try {
       console.log('Starting code evaluation...');
-      const result = await submitAndEvaluate(code, language, problem.testCases);
+      const result = await submitSolution(problem._id, code, language);
       console.log('Evaluation result:', result);
       
       setSubmissionResults(result);

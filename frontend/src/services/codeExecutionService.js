@@ -1,6 +1,14 @@
 import api from './api.config';
 
-const executeCode = async (code, language, input) => {
+// Language IDs for supported languages
+export const LANGUAGE_IDS = {
+    python: 'python',
+    cpp: 'cpp',
+    java: 'java'
+};
+
+// Execute code with single input
+export const executeCode = async (code, language, input) => {
     try {
         const response = await api.post('/api/code/execute', {
             code,
@@ -9,11 +17,12 @@ const executeCode = async (code, language, input) => {
         });
         return response.data;
     } catch (error) {
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
-const submitSolution = async (problemId, code, language) => {
+// Submit solution for a problem
+export const submitSolution = async (problemId, code, language) => {
     try {
         const response = await api.post('/api/code/submit', {
             problemId,
@@ -22,13 +31,14 @@ const submitSolution = async (problemId, code, language) => {
         });
         return response.data;
     } catch (error) {
-        throw error;
+        throw error.response?.data || error;
     }
 };
 
 const codeExecutionService = {
     executeCode,
-    submitSolution
+    submitSolution,
+    LANGUAGE_IDS
 };
 
 export default codeExecutionService; 
