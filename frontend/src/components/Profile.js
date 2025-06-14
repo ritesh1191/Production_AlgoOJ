@@ -25,7 +25,7 @@ import {
   TrendingUp as StatsIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import axios from 'axios';
+import api from '../services/api.config';
 import authService from '../services/auth.service';
 
 const Profile = () => {
@@ -46,17 +46,11 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [problemsRes, submissionsRes] = await Promise.all([
-          axios.get('http://localhost:5001/api/problems', {
-            headers: { Authorization: `Bearer ${user.token}` }
-          }),
-          axios.get('http://localhost:5001/api/submissions/my-submissions', {
-            headers: { Authorization: `Bearer ${user.token}` }
-          })
-        ]);
+        const problemsResponse = await api.get('/api/problems');
+        const submissionsResponse = await api.get('/api/submissions/my-submissions');
 
-        const problems = problemsRes.data;
-        const submissions = submissionsRes.data;
+        const problems = problemsResponse.data;
+        const submissions = submissionsResponse.data;
 
         // Get unique solved problems
         const solvedProblems = new Set(

@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import SearchIcon from '@mui/icons-material/Search';
-import axios from 'axios';
+import api from '../services/api.config';
 import { format } from 'date-fns';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -43,7 +43,7 @@ const AllSubmissions = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/submissions/all', {
+        const response = await api.get('/api/submissions/all', {
           headers: {
             'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user')).token}`
           }

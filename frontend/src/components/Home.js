@@ -28,7 +28,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import problemService from '../services/problem.service';
-import axios from 'axios';
+import api from '../services/api.config';
 import authService from '../services/auth.service';
 
 const Home = () => {
@@ -46,7 +46,7 @@ const Home = () => {
         // Fetch problems and submissions in parallel
         const [problemsRes, submissionsRes] = await Promise.all([
           problemService.getProblems(),
-          axios.get('http://localhost:5001/api/submissions/my-submissions', {
+          api.get('/api/submissions/my-submissions', {
             headers: { Authorization: `Bearer ${user.token}` }
           })
         ]);

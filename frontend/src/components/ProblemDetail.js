@@ -32,6 +32,7 @@ import './ProblemDetail.css';
 import { executeCode, submitSolution } from '../services/codeExecutionService';
 import authService from '../services/auth.service';
 import submissionService from '../services/submission.service';
+import api from '../services/api.config';
 
 const languageOptions = {
   python: {
@@ -69,7 +70,7 @@ function ProblemDetail() {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/api/problems/${id}`);
+        const response = await api.get(`/api/problems/${id}`);
         setProblem(response.data);
         if (response.data.testCases && response.data.testCases.length > 0) {
           const visibleTestCase = response.data.testCases.find(tc => !tc.isHidden);
