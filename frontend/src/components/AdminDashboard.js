@@ -47,7 +47,7 @@ const AdminDashboard = () => {
 
   const fetchProblems = async () => {
     try {
-      const data = await problemService.getProblems();
+      const data = await problemService.getAllProblems();
       setProblems(data);
     } catch (error) {
       toast.error('Failed to fetch problems');
