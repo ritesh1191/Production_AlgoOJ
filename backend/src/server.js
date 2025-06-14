@@ -17,7 +17,12 @@ app.options('*', cors());
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://192.168.68.60:3000'],
+  origin: [
+    'http://localhost:3000',
+    'http://192.168.68.60:3000',
+    'https://algooj.vercel.app',  // Add your Vercel frontend URL
+    'https://*.vercel.app'        // Allow all Vercel preview deployments
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -30,9 +35,14 @@ app.use(express.json());
 // Request logging middleware
 app.use((req, res, next) => {
   // Allow requests from both localhost and network IP
-  const allowedOrigins = ['http://localhost:3000', 'http://192.168.68.60:3000'];
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://192.168.68.60:3000',
+    'https://algooj.vercel.app',  // Add your Vercel frontend URL
+    'https://*.vercel.app'        // Allow all Vercel preview deployments
+  ];
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (allowedOrigins.includes(origin) || (origin && origin.endsWith('.vercel.app'))) {
     res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
