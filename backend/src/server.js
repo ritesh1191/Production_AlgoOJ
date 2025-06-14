@@ -20,7 +20,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://192.168.68.60:3000',
-    'https://algooj.vercel.app',  // Add your Vercel frontend URL
+    'https://algooj-frontend.vercel.app/',  // Add your Vercel frontend URL
     'https://*.vercel.app'        // Allow all Vercel preview deployments
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
