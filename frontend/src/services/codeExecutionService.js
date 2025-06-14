@@ -24,7 +24,7 @@ export const executeCode = async (code, language, input) => {
 // Submit solution for a problem
 export const submitSolution = async (problemId, code, language) => {
     try {
-        const response = await api.post('/api/code/submit', {
+        const response = await api.post('/api/code/evaluate', {
             problemId,
             code,
             language
