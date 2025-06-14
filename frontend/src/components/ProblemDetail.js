@@ -135,7 +135,7 @@ function ProblemDetail() {
     
     try {
       console.log('Starting code evaluation...');
-      const result = await submitSolution(problem._id, code, language);
+      const result = await submitSolution(problem._id, code, language, problem.testCases);
       console.log('Evaluation result:', result);
       
       setSubmissionResults(result);

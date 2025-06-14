@@ -22,12 +22,13 @@ export const executeCode = async (code, language, input) => {
 };
 
 // Submit solution for a problem
-export const submitSolution = async (problemId, code, language) => {
+export const submitSolution = async (problemId, code, language, testCases) => {
     try {
         const response = await api.post('/api/code/evaluate', {
             problemId,
             code,
-            language
+            language,
+            testCases
         });
         return response.data;
     } catch (error) {
