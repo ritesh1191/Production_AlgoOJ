@@ -1,5 +1,6 @@
 const { exec } = require('child_process');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const util = require('util');
 const execPromise = util.promisify(exec);
@@ -32,7 +33,7 @@ const runCode = async (code, language, input) => {
         const filePath = path.join(tempDir, `${fileName}.${getFileExtension(language)}`);
         
         // Write code to file
-        await fs.writeFile(filePath, code);
+        await fsPromises.writeFile(filePath, code);
 
         let result;
         switch (language.toLowerCase()) {
@@ -145,14 +146,14 @@ const getFileExtension = (language) => {
 const cleanup = async (filePath) => {
     try {
         // Remove source file
-        await fs.unlink(filePath);
+        await fsPromises.unlink(filePath);
         
         // Remove compiled files if they exist
         const basePath = filePath.replace(/\.[^/.]+$/, '');
-        const files = await fs.readdir(path.dirname(filePath));
+        const files = await fsPromises.readdir(path.dirname(filePath));
         for (const file of files) {
             if (file.startsWith(path.basename(basePath)) && file !== path.basename(filePath)) {
-                await fs.unlink(path.join(path.dirname(filePath), file));
+                await fsPromises.unlink(path.join(path.dirname(filePath), file));
             }
         }
     } catch (error) {
